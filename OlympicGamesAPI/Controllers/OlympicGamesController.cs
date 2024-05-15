@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace OlympicGamesAPI.Controllers;
 
-    [ApiController, Route("game")]
+    [ApiController, Route("games")]
     public class OlympicGamesController(OlympicGamesDbContext _context) : ControllerBase
     {
         [HttpGet]
@@ -67,5 +67,48 @@ namespace OlympicGamesAPI.Controllers;
         return Ok(person);
         
     }
+    [HttpPost]
+    public IActionResult AddGame([FromBody] GameInputModel gameInput)
+    {
+        
+        string gamesName = gameInput.GamesName;
+        int gamesYear = gameInput.GamesYear;
+        string season = gameInput.Season;
+
+        
+        if (gamesYear % 4 != 0)
+        {
+            return BadRequest("Rok musi byæ podzielny przez 4.");
+        }
+
+      
+        bool isSummerSeason = season.ToLower() == "summer";
+        bool isWinterSeason = season.ToLower() == "winter";
+        bool isValidSeason = (gamesYear % 2 == 0 && isWinterSeason) || (gamesYear % 2 != 0 && isSummerSeason);
+        if (!isValidSeason)
+        {
+            return BadRequest($"Nieprawid³owy sezon dla roku {gamesYear}.");
+        }
+
+       
+        if (_context.Games.Any(g => g.GamesName == gamesName && g.GamesYear == gamesYear && g.Season == season))
+        {
+            return BadRequest("Olimpiada ju¿ istnieje w bazie.");
+        }
+
+      
+        var newGame = new Game
+        {
+            GamesName = gamesName,
+            GamesYear = gamesYear,
+            Season = season
+        };
+
+        _context.Games.Add(newGame);
+        _context.SaveChanges();
+
+        return Ok(newGame);
+    }
 }
+
 //bez bin i obj
