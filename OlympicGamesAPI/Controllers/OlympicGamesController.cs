@@ -27,4 +27,45 @@ namespace OlympicGamesAPI.Controllers;
                 PageNumber = pageNumber
             };
         }
+    [HttpGet("{id}")]
+    public IActionResult GetPerson(int id)
+    {
+        var personEvents = _context.CompetitorEvents
+                .Include(ce => ce.Event)
+                    .Include(e => e.Medal)
+                    .Include(gc=>gc.Competitor)
+                .Where(ce => ce.CompetitorId == id)
+                .Select(ce => new
+                {
+                    MedalName = ce.Medal.MedalName,                
+                    GameName = ce.Competitor.Games.GamesName,
+                    EventName = ce.Event.EventName
+                })
+                .ToList();
+
+        if (!personEvents.Any())
+        {
+            return NotFound();
+        }
+
+        var person = _context.People
+            .Where(p => p.Id == id)
+            .Select(p => new
+            {
+                p.FullName,
+                p.Weight,
+                p.Height,
+                Events = personEvents
+            })
+            .FirstOrDefault();
+
+        if (person == null)
+        {
+            return NotFound();
+        }
+
+        return Ok(person);
+        
     }
+}
+//bez bin i obj
